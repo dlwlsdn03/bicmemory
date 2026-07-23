@@ -5,73 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="992b151f-fe8e-4c7b-8bd1-8891bd54b2f6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/EUR.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/NE.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/SPY.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLB.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLE.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLF.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLI.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLK.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLP.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLU.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLV.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/RV (Dacheng Xiu)/XLY.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/Reference (Oxford-Man)/OMI Realised Library.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/Returns (CRSP)/Returns.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Data/Risk free/Risk-free Rate.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NN.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/NN.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Align Results.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/HAR AIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/HAR BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/HAR HQIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/HAR.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/LSTM AIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/LSTM BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/LSTM HQIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/LSTM.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/MLP AIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/MLP BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/MLP HQIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Alternate IC/MLP.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Cumulative SSE Difference.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Diebold Mariano Test.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Modified DM (ETF)/HAR BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Modified DM (ETF)/HAR.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Modified DM (ETF)/LSTM BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Modified DM (ETF)/LSTM.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Modified DM (ETF)/MLP BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Modified DM (ETF)/MLP.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/Realised Utility.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/SPX SPY Correlation.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/SPY/HAR {SPY} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/SPY/HAR {SPY}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/SPY/LSTM {SPY} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/SPY/LSTM {SPY}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/SPY/MLP {SPY} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/SPY/MLP {SPY}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLK/HAR {XLK} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLK/HAR {XLK}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLK/LSTM {XLK} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLK/LSTM {XLK}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLK/MLP {XLK} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLK/MLP {XLK}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLV/HAR {XLV} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLV/HAR {XLV}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLV/LSTM {XLV} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLV/LSTM {XLV}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLV/MLP {XLV} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLV/MLP {XLV}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLY/HAR {XLY} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLY/HAR {XLY}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLY/LSTM {XLY} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLY/LSTM {XLY}.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLY/MLP {XLY} BIC.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Results/XLY/MLP {XLY}.csv" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
