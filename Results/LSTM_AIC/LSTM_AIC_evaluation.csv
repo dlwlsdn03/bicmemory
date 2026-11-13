@@ -1,0 +1,2 @@
+model,requested_tickers,evaluated_tickers,observations,mse,qlike
+LSTM_AIC,27,27,151905,0.011098648484296127,0.12922442694464498

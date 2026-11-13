@@ -1,0 +1,320 @@
+\documentclass[12pt]{article}
+
+\usepackage{authblk}
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm]{geometry}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{csquotes}
+\usepackage{setspace}
+\usepackage{appendix}
+\usepackage{etoolbox}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\usepackage[style=apa, backend=biber,sorting=nyt]{biblatex}
+\DeclareLanguageMapping{american}{american-apa}
+\addbibresource{ref.bib}
+\addbibresource{ref_additions.bib}
+\DeclareDelimFormat{nameyeardelim}{\addcomma\space}
+\BeforeBeginEnvironment{appendices}{\clearpage}
+
+\graphicspath{{figures/}}
+
+\begin{document}
+
+\title{\Large\textbf{Statistical model memory selection in LSTM networks for volatility forecasting}}
+\author[]{Rickey Lee}
+\affil[]{Department of Accounting and Finance, University of Auckland}
+\date{}
+
+\renewcommand\Authfont{\normalsize}
+\renewcommand\Affilfont{\small}
+
+\maketitle
+\doublespacing
+
+\begin{abstract}
+Existing LSTM applications in financial forecasting commonly treat the lookback period as a fixed implementation choice and often provide limited justification for its value. This paper proposes a computationally inexpensive alternative that allows the lookback to vary across assets and over time. Rather than repeatedly training neural networks over a grid of candidate sequence lengths, we use the lag order selected by the Akaike information criterion from a linear autoregressive approximation as the LSTM lookback. We evaluate the resulting AIC-guided LSTM using an expanding walk-forward exercise on realised volatility for 27 Dow Jones Industrial Average constituents. We compare it with conventional fixed-lookback LSTMs and with an LSTM whose lookback is selected each window by validation loss over the same grid. Forecasts are evaluated using mean squared error, QLIKE loss, realised utility, and the model confidence set. The method is not intended to identify structural memory or the forecast-optimal sequence length, but to provide a transparent and fully in-sample rule for adapting a consequential neural-network hyperparameter. The AIC-guided LSTM [main result relative to fixed-lookback LSTMs] and [main result relative to the validation-selected LSTM, including relative cost]. These results suggest that [one restrained implication].
+\end{abstract}
+
+\section{Introduction and Related Literature}
+
+\noindent Forecasting volatility is central to risk management, portfolio allocation, derivatives pricing, and more. Since the development of realised volatility measures from high-frequency returns, a large literature has shown that volatility forecasts improve when the econometric design uses richer information than daily squared returns alone \parencite{andersen-1998,andersen-2003}. Yet one practical problem remains unusually persistent: how far back should a forecasting model look?
+
+In most forecasting models, memory is fixed in advance. Heterogeneous autoregressive (HAR) models of realised volatility, from \textcite{corsi-2008} to extensions with jumps, semivariances, and measurement-error adjustments \parencite{anderson-2007,patton-2015,bollerslev-2016}, retain the same daily, weekly, and monthly (22-day) horizons. In recurrent neural networks such as the Long Short-Term Memory (LSTM) network \parencite{hochreiter-1997}, memory is embedded in an input window, or sequence length, that is likewise usually fixed across assets and over time, and so risks being poorly aligned with the dependence actually present in the data. A lookback that is too long asks the network to learn from lags that carry little information, adding estimation noise; one that is too short discards information the data could support. Which of the two applies depends on the stock and on how much history is available to estimate the dependence.
+
+This paper studies a deliberately simple solution: letting an information criterion choose memory before the nonlinear model is trained. The lag order selected by the Akaike information criterion (AIC) from autoregressive models of log realised volatility is used directly as the recurrent model's lookback length, separately for each stock and re-selected at the start of each year. We compare the resulting LSTM$_{\mathrm{AIC}}$ with two alternatives. The first is LSTMs with fixed lookbacks of the lengths commonly used in the literature. The second is an LSTM whose lookback is chosen in each window by validation loss over the same grid, the conventional data-driven alternative, whose cost is that the whole grid must be trained.
+
+The paper relates to the literature on model selection for machine-learning forecasters. Neural networks and related flexible learners have been shown to match or outperform established econometric volatility models \parencite{bucci-2020,christensen-2022,morenopino-2024}. Because strong in-sample fit does not guarantee stable out-of-sample performance, this literature disciplines tuning choices such as the predictor set, the architecture, and the degree of regularisation with validation data \parencite{gu-2020,chen-2023}. Memory has received far less attention. Applied LSTM volatility studies typically fix the lookback at around one month of trading days \parencite{zhang-2023,rosenbaum-2022}, the same horizon as HAR's monthly component; where it is tuned, it is tuned by validation over a grid \parencite{rodikov-2022}, which multiplies training cost. Information criteria, the standard tool for choosing memory in linear models, have occasionally been brought to neural networks: \textcite{bucci-2020} chooses the number of realised-volatility lags in the predictor set with information criteria, and \textcite{swanson-1997} re-select the lags and hidden units of macroeconomic neural networks at every forecast origin with the Schwarz criterion. Outside volatility forecasting, \textcite{leites-2024} compare lag-selection methods for a deep-learning forecaster trained globally across many univariate series and find that the lag size matters, with cross-validation performing best but comparably to simple heuristics, and \textcite{fang-2021} use information criteria and minimum message length to select the ARMA component of hybrid ARMA--LSTM models, in which the LSTM is fitted to the ARMA residuals. Table~\ref{tab:lookbacks} summarises how lookbacks have been chosen in LSTM volatility studies. To our knowledge, an information criterion has not been used to select an LSTM's lookback separately for each asset and re-selection date.
+
+\input{lookback_table}
+
+The question is therefore whether this discipline improves out-of-sample forecasts relative to fixed and validation-selected lookbacks, at a fraction of the cost of the latter. We deliberately compare LSTMs that differ only in their lookback: the networks are univariate and estimated stock by stock, so that the lookback is the only design difference between specifications. The paper therefore asks how an LSTM's memory should be chosen, not whether LSTMs outperform linear models. Neural-network gains over linear volatility models are typically reported with pooled estimation, additional predictors, or intraday horizons \parencite{christensen-2022,zhang-2023,rosenbaum-2022}, and with the information set held fixed, nonlinear models rarely outperform linear ones \parencite{branco-2024}.
+
+\section{Data and Empirical Design}
+
+\subsection{Realised Volatility}
+
+Realised volatility measures are obtained from Dacheng Xiu's Risk Lab, using the quasi-maximum likelihood estimator of \textcite{xiu-2010} applied to NYSE TAQ high-frequency trade data (QMLE-Trade). Values are annualised daily volatilities. The equity universe is constructed following the index-membership approach of \textcite{christensen-2022}. Beginning from the 30 current constituents of the Dow Jones Industrial Average, we require continuous availability in the Risk Lab database from 1 January 2000 onward. Where a constituent has undergone a merger, acquisition, or corporate rename, we retain the security under its continuously-traded predecessor identifier. Examples are Chevron Corporation prior to its 2001 merger with Texaco; Chase Manhattan Corporation (formerly Chemical Banking Corporation) prior to its 2000 merger with J.P.~Morgan \& Co.; and St.~Paul Companies prior to its 2004 merger with Travelers Property Casualty and its 2007 rename to Travelers. Constituents with no continuously-traded predecessor spanning the full sample period are excluded. This applies to Visa Inc., Salesforce Inc., and Alphabet Inc.\ (Class A), whose public listings postdate 2000, mirroring the exclusion of Visa on identical grounds in \textcite{christensen-2022}. Because membership is defined at the end of the sample, the panel is conditioned on survival. Every model is evaluated on the same stocks and dates, however, so this conditioning is unlikely to favour one lookback rule over another. This yields a final panel of 27 stocks, with summary statistics shown in Table~\ref{tab:qmlesummary}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Descriptive statistics}
+\label{tab:qmlesummary}
+\small
+\setlength{\tabcolsep}{7pt}
+\renewcommand{\arraystretch}{0.96}
+\begin{tabular}{lrrrrr}
+\toprule
+Ticker & Observations & Mean & Std. dev. & Median & 95th pct. \\
+\midrule
+AAPL & 6,635 & 0.273 & 0.166 & 0.224 & 0.609 \\
+AMGN & 6,629 & 0.240 & 0.123 & 0.205 & 0.488 \\
+AMZN & 6,637 & 0.319 & 0.216 & 0.257 & 0.764 \\
+AXP  & 6,632 & 0.239 & 0.169 & 0.186 & 0.544 \\
+BA   & 6,638 & 0.249 & 0.138 & 0.215 & 0.488 \\
+CAT  & 6,631 & 0.244 & 0.125 & 0.212 & 0.461 \\
+CSCO & 6,635 & 0.240 & 0.141 & 0.197 & 0.523 \\
+CVX  & 6,639 & 0.205 & 0.110 & 0.178 & 0.378 \\
+DIS  & 6,631 & 0.223 & 0.125 & 0.187 & 0.454 \\
+GS   & 6,634 & 0.251 & 0.163 & 0.204 & 0.523 \\
+HD   & 6,636 & 0.223 & 0.128 & 0.185 & 0.460 \\
+HON  & 6,630 & 0.220 & 0.137 & 0.181 & 0.479 \\
+IBM  & 6,633 & 0.190 & 0.110 & 0.157 & 0.400 \\
+JNJ$^{\dagger}$ & 6,631 & 0.160 & 0.086 & 0.137 & 0.305 \\
+JPM  & 6,611 & 0.246 & 0.177 & 0.191 & 0.555 \\
+KO   & 6,635 & 0.164 & 0.090 & 0.138 & 0.330 \\
+MCD  & 6,634 & 0.182 & 0.105 & 0.151 & 0.377 \\
+MMM  & 6,628 & 0.190 & 0.101 & 0.168 & 0.373 \\
+MRK  & 6,636 & 0.207 & 0.109 & 0.180 & 0.386 \\
+MSFT & 6,637 & 0.215 & 0.109 & 0.184 & 0.423 \\
+NKE  & 6,636 & 0.228 & 0.125 & 0.192 & 0.459 \\
+NVDA & 6,632 & 0.406 & 0.239 & 0.342 & 0.853 \\
+PG   & 6,631 & 0.164 & 0.099 & 0.140 & 0.320 \\
+SHW  & 6,621 & 0.223 & 0.121 & 0.190 & 0.447 \\
+TRV  & 6,601 & 0.208 & 0.147 & 0.168 & 0.458 \\
+UNH  & 6,618 & 0.238 & 0.132 & 0.203 & 0.477 \\
+WMT  & 6,601 & 0.185 & 0.103 & 0.153 & 0.394 \\
+\midrule
+Average & 6,629 & 0.227 & 0.133 & 0.190 & 0.471 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.5em}
+\begin{minipage}{0.94\textwidth}
+\footnotesize
+\textit{Notes:} Statistics are calculated from QMLE-Trade annualised daily volatilities from 1 January 2000 through 30 June 2026, inclusive. Individual observation counts vary slightly because of security-specific missing trading days. ``Average'' is the arithmetic cross-sectional mean of the 27 stock-level entries in each column; observations are rounded to the nearest whole number. $^{\dagger}$The Risk Lab file contains two QMLE-Trade observations for JNJ on each of 21--23 August 2023, coinciding with the completion of Johnson \& Johnson's Kenvue exchange offer; these three dates are treated as missing.
+\end{minipage}
+\end{table}
+
+
+\subsection{Methodology}
+
+\subsubsection{Data Splitting}
+
+Each stock is evaluated on an expanding, walk-forward basis. Training target observations begin on 1 January 2000. Observations immediately preceding this date are retained solely to initialise the lagged input sequences required for the earliest training targets; pre-2000 observations are never used as training targets. The initial training window spans 3 years, followed by a 1-year validation window used for early stopping. The first out-of-sample test window begins on 1 January 2004. The training window expands with each successive step, while the validation and test windows roll forward. The one-year test window denotes the retraining cadence rather than the size of the evaluation sample: every model is re-estimated, and every lookback re-selected, at the start of each calendar year using all data then available, as in \textcite{gu-2020} and \textcite{zhang-2023}. Out-of-sample forecasts from the annual test windows are concatenated to form a continuous one-day-ahead forecast series for each stock. Lookback length therefore does not alter the training, validation, or testing dates.
+
+\subsubsection{LSTM Specification}
+
+The recurrent LSTM neural network is given by:
+
+\begin{equation}
+\begin{aligned}
+f_t &= \sigma(W_f x_t + U_f h_{t-1} + b_f), \\
+i_t &= \sigma(W_i x_t + U_i h_{t-1} + b_i), \\
+\tilde{C}_t &= \tanh(W_c x_t + U_c h_{t-1} + b_c), \\
+C_t &= f_t \circ C_{t-1} + i_t \circ \tilde{C}_t, \\
+o_t &= \sigma(W_o x_t + U_o h_{t-1} + b_o), \\
+h_t &= o_t \circ \tanh (C_t).
+\end{aligned}
+\end{equation}
+
+\noindent where \(x_t\) is the input vector, \(f_t\) is the forget gate activation vector, \(i_t\) is the input gate activation vector, \(o_t\) is the output gate activation vector, \(\tilde{C}_t\) is the candidate cell state vector, \(C_t\) is the cell state vector, and \(h_t\) is the hidden state vector. The symbol \(\circ\) denotes the Hadamard product, \(\sigma\) is the sigmoid function, \(\tanh\) is the hyperbolic tangent function, and \(W\), \(U\), and \(b\) denote weight matrices and bias vectors to be learned.
+
+All networks share one architecture and training protocol and are estimated stock by stock. The input is a sequence of past log realised volatilities, $y_{i,t}=\log(RV_{i,t})$, processed by two stacked LSTM layers \parencite{hochreiter-1997} with 16 and 8 units; the final hidden state feeds a linear output layer that predicts $y_{i,t+1}$. Inputs and target are standardised with training-window moments. Networks are trained with Adam on mean squared error, with early stopping on the validation year. To reduce sensitivity to random initialisation, each forecast averages an ensemble of $E=10$ independently initialised networks: each network's log forecast is exponentiated, and the resulting volatility forecasts are averaged. No bias correction is applied when converting log forecasts to levels, for any model. Appendix Table~\ref{tab:hyper} lists all settings. Stock-by-stock estimation keeps each stock's lookback, and its effect on the forecast, separate from the others; pooled estimation with stock-specific sequence lengths is left for future work.
+
+\subsubsection{Model Memory Selection}
+\label{sec:memory}
+
+\noindent In the fixed-lookback LSTM, the input sequence is
+\begin{equation}
+X_{i,t}^{(L)}
+=
+\left(
+y_{i,t-L+1},
+\dots,
+y_{i,t-1},
+y_{i,t}
+\right),
+\end{equation}
+\noindent where $L \in \{10, 21, 42, 63\}$ is fixed ex ante, spanning roughly two weeks, one month, two months, and one quarter of trading days. The grid covers the windows of around one month used in LSTM volatility applications \parencite{zhang-2023,rosenbaum-2022} and extends to one quarter; \textcite{rodikov-2022} search windows of up to 50 days. Each value of $L$ defines a separate model, denoted LSTM$_{L}$.
+
+The LSTM$_{\mathrm{AIC}}$ is identical in architecture, preprocessing, and training protocol; the only difference is that $L$ is replaced by the AIC-selected memory $p_{i,\tau}^{*}$ for each stock $i$ and re-selection year $\tau$,
+\begin{equation}
+X_{i,t}^{(\mathrm{AIC})}
+=
+\left(
+y_{i,t-p_{i,\tau}^{*}+1},
+\dots,
+y_{i,t-1},
+y_{i,t}
+\right).
+\end{equation}
+\noindent Memory is selected at each re-estimation date, the start of each calendar year from 2004 onward, on all observations available on that date: from 1 January 2000 to the end of the preceding year, that is, the training and validation windows together. The selection sample therefore grows from four years in 2004 to 26 years in 2026, and it spans exactly the data on which the networks are trained and validated. Within it, we fit autoregressions with an intercept to $y_{i,t}$ for orders $p \in \{1,\dots,p_{\max}\}$, with $p_{\max}=63$: one quarter of trading days and the longest lookback in the fixed grid, so that LSTM$_{\mathrm{AIC}}$ never uses a longer sequence than the longest fixed lookback. All orders are estimated by conditional maximum likelihood on the same observations (the first $p_{\max}$ observations of the sample are held back), so their criteria are comparable. The selected order is
+\begin{equation}
+p_{i,\tau}^{*}
+=
+\arg\min_{1 \le p \le p_{\max}}
+\left\{
+-2\log \mathcal{L}_{i,\tau}(p)+2k_p
+\right\},
+\end{equation}
+where $\mathcal{L}_{i,\tau}(p)$ is the maximised likelihood of the AR($p$) model and $k_p=p+2$ counts the autoregressive coefficients, the intercept, and the innovation variance \parencite{akaike-1974}. We use AIC rather than the Bayesian information criterion (BIC) because, when the true process is of infinite order, as is effectively the case for persistent volatility, AIC is asymptotically efficient for prediction \parencite{shibata-1980}, whereas BIC's heavier penalty favours short orders. Re-selecting on all available observations is the recursive scheme common in real-time forecasting \parencite{pesaran-1995}, and it has a theoretical rationale: AIC's prediction efficiency improves with sample size \parencite{shibata-1980,ing-2005}, and including older observations is generally preferable unless the dynamics change sharply \parencite{pesaran-2007}. It also leaves no selection-window length to choose. Re-selecting more often would change little: one additional month changes the selection sample by at most about two per cent, and in our data re-selecting every month would leave the order unchanged in about 80\% of stock-months and within two lags in about 88\%.
+
+This design isolates the effect of replacing a predefined memory with a data-driven alternative, holding architecture, preprocessing, and training protocol fixed. AIC trades off the information carried by additional lags against the noise of estimating them. Because log realised volatility is highly persistent, its autoregressive coefficients decay slowly and individually small distant lags become worth including only when enough data are available to estimate them. The selected order therefore varies across stocks and lengthens as the sample grows. We interpret $p_{i,\tau}^{*}$ as the number of lags the available data can support, a parsimonious and data-driven choice, rather than as the true structural memory of volatility, a measure of the current volatility regime, or the forecast-optimal LSTM sequence length.
+
+The conventional data-driven alternative is to tune the lookback like any other hyperparameter. For each stock and window, LSTM$_{\mathrm{VAL}}$ uses the forecasts of whichever fixed-lookback LSTM attains the lowest QLIKE on the validation year, with ties resolved in favour of the shorter lookback. Because all fixed-lookback models share the same calendar, LSTM$_{\mathrm{VAL}}$ requires no training beyond the four LSTM$_{L}$ models, but its cost is that of training the whole grid in every window: four networks per window, against one for LSTM$_{\mathrm{AIC}}$, which adds only a set of linear autoregressions. Validation tuning at the resolution of the AIC search, over every order from 1 to 63, would require 63 networks per window.
+
+\section{Evaluation Metrics}
+
+\noindent Let $\widehat{RV}_{i,t}$ denote the forecast of $RV_{i,t}$ formed with information up to day $t-1$, and let $V_{i,t}=RV_{i,t}^{2}$ and $\widehat{V}_{i,t}=\widehat{RV}_{i,t}^{\,2}$ denote realised variance and its forecast. Forecast accuracy is evaluated on variances with mean squared error (MSE) and quasi-likelihood (QLIKE) loss,
+\begin{equation}
+\text{MSE}_{i}
+=
+\frac{1}{T_i}
+\sum_{t=1}^{T_i}
+\left(
+\widehat{V}_{i,t}-V_{i,t}
+\right)^2,
+\end{equation}
+
+\begin{equation}
+\text{QLIKE}_{i}
+=
+\frac{1}{T_i}
+\sum_{t=1}^{T_i}
+\left[
+\frac{V_{i,t}}{\widehat{V}_{i,t}}
+-
+\log\left(
+\frac{V_{i,t}}{\widehat{V}_{i,t}}
+\right)
+-1
+\right].
+\end{equation}
+
+\noindent Computed on variances, both MSE and QLIKE belong to the class of loss functions that rank forecasts consistently when the realised measure is a noisy proxy for true variance \parencite{patton-2011}. QLIKE penalises under-prediction of risk more heavily than over-prediction, whereas MSE penalises errors symmetrically and is dominated by high-volatility days. Because forecasts are exponentiated without bias correction, they are biased downwards in level; as a check that model rankings do not reflect this bias, we also report MSE on log realised volatility, which it does not affect. For each model, losses are first averaged through time within each stock and then averaged across the $N$ stocks, so that each stock receives equal weight despite small differences in the number of available observations.
+
+To complement these statistical criteria, we also report realised utility \parencite{bollerslev-2018}. This metric translates volatility forecasts into the certainty-equivalent value of a mean-variance investor who allocates between a risky asset and a risk-free asset under a constant conditional Sharpe ratio. Let $\widehat{V}_{i,t}^{\,\theta}$ denote the variance forecast produced by model $\theta$. Realised utility is given by
+\begin{equation}
+RU^\theta
+=
+\frac{1}{T}
+\sum_{t=1}^{T}
+\frac{1}{N_t}
+\sum_{i=1}^{N_t}
+\left[
+\frac{SR^2}{\gamma}
+\frac{\sqrt{V_{i,t}}}
+{\sqrt{\widehat{V}_{i,t}^{\,\theta}}}
+-
+\frac{SR^2}{2\gamma}
+\frac{V_{i,t}}
+{\widehat{V}_{i,t}^{\,\theta}}
+\right],
+\end{equation}
+where $SR$ is the assumed conditional Sharpe ratio, $\gamma$ is relative risk aversion, and $N_t$ is the number of stocks available on day $t$. Following \textcite{zhang-2023}, we set $SR=0.4$ and $\gamma=2$, so that a perfect forecast attains $SR^2/(2\gamma)$. Realised utility is interpreted as the certainty-equivalent return generated by using forecasted variance to scale risk exposure \parencite{bollerslev-2018}.
+
+To compare models statistically, we report \textcite{diebold-1995} tests based on cross-sectional average loss differentials, following \textcite{gu-2020} and \textcite{zhang-2023}. For competing models $a$ and $b$, the day-$t$ loss differential is
+\begin{equation}
+d_t^{(a-b)}
+=
+\frac{1}{N_t}
+\sum_{i=1}^{N_t}
+\left(
+L_{i,t}^{(a)}-L_{i,t}^{(b)}
+\right),
+\end{equation}
+and the test statistic uses a \textcite{newey-1987} long-run variance with a Bartlett kernel and $\lfloor 4(T/100)^{2/9}\rfloor$ lags, with two-sided p-values from the standard normal distribution. QLIKE is the primary loss function because \textcite{Patton2009} show that Diebold--Mariano tests based on QLIKE have greater power than those based on MSE.
+
+Because the comparison involves several models, we also report the 90\% model confidence set (MCS) of \textcite{hansen-2011}: the set of models that contains the best model with 90\% confidence. The MCS uses the $T_{\max}$ statistic on daily cross-sectional average losses, computed over the asset-dates on which every model has a forecast. Inference uses a stationary bootstrap with 10,000 replications, with the block length chosen by the automatic rule of \textcite{politis-2004} as corrected by \textcite{patton-2009b}.
+
+Finally, we report losses within four pre-specified sub-periods: 2004--2006, when the training sample is shortest; the 2008--2009 financial crisis; 2020; and all other years. We also describe the behaviour of $p_{i,\tau}^{*}$: its distribution across stocks and over time, how often it changes between consecutive annual re-selections, how often the cap $p_{\max}$ binds, and how much of its variation reflects persistent differences between stocks rather than a common trend over time.
+
+\section{Main Results}
+
+% [To be completed once all models have been run.]
+% Table 2: MSE, QLIKE and RU for LSTM_10, LSTM_21, LSTM_42, LSTM_63, LSTM_VAL and
+%          LSTM_AIC, with DM statistics against LSTM_AIC and 90% MCS membership.
+% Figure 1: AIC-selected lookback over time (Results/Analysis/Lookback_Analysis.ipynb).
+% Table 3: QLIKE by sub-period.
+
+\begin{figure}[!htbp]
+\centering
+\IfFileExists{figures/lookback_over_time.pdf}{%
+  \includegraphics[width=\textwidth]{lookback_over_time.pdf}%
+}{%
+  \fbox{\parbox[c][4cm][c]{0.9\textwidth}{\centering Figure placeholder: run \texttt{Results/Analysis/Lookback\_Analysis.ipynb}.}}%
+}
+\caption{AIC-selected lookback over time}
+\label{fig:lookback}
+
+\vspace{0.5em}
+\begin{minipage}{0.94\textwidth}
+\footnotesize
+\textit{Notes:} The line is the cross-sectional median of the AIC-selected lookback $p^{*}_{i,\tau}$ across the 27 stocks at each annual re-estimation date (1 January), selected on all observations before that date; the band is the interquartile range. Shaded areas mark 2008--2009 and 2020.
+\end{minipage}
+\end{figure}
+
+\section{Conclusion}
+
+% [Summary of findings to be completed.]
+
+The design isolates the lookback in a deliberately simple setting: univariate, stock-by-stock networks forecasting one day ahead. Whether the same rule helps when networks are pooled across assets, use additional predictors, or forecast longer horizons, settings in which the most useful memory may differ, is left for future work. So is a rule that adapts the weight given to older observations, rather than the number of lags, to the prevailing volatility regime.
+
+\section*{Data availability}
+
+Realised volatility data are available from Dacheng Xiu's Risk Lab, subject to its terms of use. Code to reproduce all results is available at [repository link].
+
+\section*{Declaration of generative AI and AI-assisted technologies in the writing process}
+
+[Complete according to the journal's policy, or delete if not applicable.]
+
+\clearpage
+\printbibliography
+
+\begin{appendices}
+
+\section{LSTM settings}
+
+\begin{table}[!htbp]
+\centering
+\caption{LSTM architecture and training settings}
+\label{tab:hyper}
+\small
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}lp{11.2cm}@{}}
+\toprule
+Setting & Value \\
+\midrule
+Input & Sequence of past $\log RV_{i,t}$ (one feature per time step) \\
+Lookback & $L\in\{10,21,42,63\}$, validation-selected from that grid, or $p^{*}_{i,\tau}$ (AIC on all data before 1 January of the test year, re-selected at each annual re-estimation, $p_{\max}=63$) \\
+Architecture & Two stacked LSTM layers (16 and 8 units); linear output on the final hidden state \\
+Target & $\log RV_{i,t+1}$ \\
+Scaling & Inputs and target standardised with training-window mean and standard deviation \\
+Loss & Mean squared error on the standardised target \\
+Optimiser & Adam, learning rate 0.001, batch size 64, mini-batches shuffled \\
+Gradient clipping & Global norm 1.0 \\
+Epochs & Maximum 100; early stopping with patience 10 on validation loss; best weights restored \\
+Regularisation & None (no dropout or batch normalisation) \\
+Ensemble & $E=10$ networks; log forecasts exponentiated, then averaged \\
+Seeds & Fixed per stock, window and ensemble member \\
+Estimation & Stock by stock; re-estimated annually \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{appendices}
+
+\end{document}
